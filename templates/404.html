@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}404 — Sayfa Bulunamadı{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-card">
+        <div class="error-emoji">🔍</div>
+        <h1>404</h1>
+        <h2>Sayfa Bulunamadı</h2>
+        <p>Aradığın sayfa burada değil gibi görünüyor. Belki de o da kararsız kalmıştır! 🤔</p>
+        <a href="{% url 'anketler:anasayfa' %}" class="btn btn-primary">Ana Sayfaya Dön</a>
+    </div>
+</div>
+{% endblock %}

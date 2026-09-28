@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Yeni Anket Oluştur — Kararsızım{% endblock %}
+
+{% block content %}
+<div class="olustur-container">
+    <a href="{% url 'anketler:anasayfa' %}" class="btn btn-ghost btn-sm detay-geri">← Geri</a>
+
+    <div class="olustur-card">
+        <div class="olustur-header">
+            <h1>📝 Yeni Anket Oluştur</h1>
+            <p>Ne hakkında kararsızsın? Topluluğa sor!</p>
+        </div>
+
+        <form method="post" class="olustur-form" novalidate>
+            {% csrf_token %}
+
+            <!-- Soru -->
+            <div class="form-group">
+                <label for="id_soru" class="form-label">{{ form.soru.label }}</label>
+                {{ form.soru }}
+                {% if form.soru.errors %}
+                <div class="form-errors">
+                    {% for error in form.soru.errors %}
+                    <small class="form-error">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Seçenekler -->
+            <div class="form-group">
+                <label class="form-label">Seçenekler <small class="form-help">(en az 2, en çok 5)</small></label>
+
+                <div id="secenekler-container" class="secenekler-form">
+                    <!-- Seçenek 1 (zorunlu) -->
+                    <div class="secenek-input-row" data-index="1">
+                        <span class="secenek-numara">1.</span>
+                        {{ form.secenek_1 }}
+                        {% if form.secenek_1.errors %}
+                        <div class="form-errors">
+                            {% for error in form.secenek_1.errors %}
+                            <small class="form-error">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Seçenek 2 (zorunlu) -->
+                    <div class="secenek-input-row" data-index="2">
+                        <span class="secenek-numara">2.</span>
+                        {{ form.secenek_2 }}
+                        {% if form.secenek_2.errors %}
+                        <div class="form-errors">
+                            {% for error in form.secenek_2.errors %}
+                            <small class="form-error">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Seçenek 3 (opsiyonel, gizli başlar) -->
+                    <div class="secenek-input-row ekstra-secenek" data-index="3" style="display: none;">
+                        <span class="secenek-numara">3.</span>
+                        {{ form.secenek_3 }}
+                        <button type="button" class="secenek-sil" onclick="secenekSil(this)" title="Kaldır">×</button>
+                    </div>
+
+                    <!-- Seçenek 4 (opsiyonel, gizli başlar) -->
+                    <div class="secenek-input-row ekstra-secenek" data-index="4" style="display: none;">
+                        <span class="secenek-numara">4.</span>
+                        {{ form.secenek_4 }}
+                        <button type="button" class="secenek-sil" onclick="secenekSil(this)" title="Kaldır">×</button>
+                    </div>
+
+                    <!-- Seçenek 5 (opsiyonel, gizli başlar) -->
+                    <div class="secenek-input-row ekstra-secenek" data-index="5" style="display: none;">
+                        <span class="secenek-numara">5.</span>
+                        {{ form.secenek_5 }}
+                        <button type="button" class="secenek-sil" onclick="secenekSil(this)" title="Kaldır">×</button>
+                    </div>
+                </div>
+
+                <button type="button" id="secenek-ekle-btn" class="btn btn-ghost btn-sm" onclick="secenekEkle()">
+                    + Seçenek Ekle
+                </button>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="form-errors">
+                {% for error in form.non_field_errors %}
+                <small class="form-error">{{ error }}</small>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary btn-full">Anketi Yayınla 🚀</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    var gorunenSecenek = 2;
+
+    function secenekGuncelle() {
+        var ekleBtn = document.getElementById('secenek-ekle-btn');
+        ekleBtn.style.display = gorunenSecenek >= 5 ? 'none' : '';
+    }
+
+    function secenekEkle() {
+        if (gorunenSecenek >= 5) return;
+        gorunenSecenek++;
+        var satirlar = document.querySelectorAll('.ekstra-secenek');
+        for (var i = 0; i < satirlar.length; i++) {
+            var idx = parseInt(satirlar[i].dataset.index);
+            if (idx === gorunenSecenek) {
+                satirlar[i].style.display = '';
+                var input = satirlar[i].querySelector('input');
+                if (input) input.focus();
+                break;
+            }
+        }
+        secenekGuncelle();
+    }
+
+    function secenekSil(btn) {
+        var satir = btn.closest('.secenek-input-row');
+        var input = satir.querySelector('input');
+        if (input) input.value = '';
+        satir.style.display = 'none';
+        gorunenSecenek--;
+        secenekGuncelle();
+    }
+
+    // Sayfa yüklendiğinde dolu olan seçenekleri göster
+    document.addEventListener('DOMContentLoaded', function() {
+        var ekstralar = document.querySelectorAll('.ekstra-secenek');
+        for (var i = 0; i < ekstralar.length; i++) {
+            var input = ekstralar[i].querySelector('input');
+            if (input && input.value.trim()) {
+                ekstralar[i].style.display = '';
+                gorunenSecenek++;
+            }
+        }
+        secenekGuncelle();
+    });
+</script>
+{% endblock %}

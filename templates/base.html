@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kararsızım{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container navbar-content">
+            <a href="{% url 'anketler:anasayfa' %}" class="navbar-brand">
+                🤔 Kararsızım
+            </a>
+            <div class="navbar-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'hesap:profil' %}" class="nav-link">
+                        <span class="nav-avatar">{{ user.username|make_list|first|upper }}</span>
+                        @{{ user.username }}
+                    </a>
+                    <form method="post" action="{% url 'hesap:cikis' %}" class="nav-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-ghost">Çıkış</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'hesap:giris' %}" class="btn btn-ghost">Giriş</a>
+                    <a href="{% url 'hesap:kayit' %}" class="btn btn-primary">Kayıt Ol</a>
+                {% endif %}
+            </div>
+            <!-- Mobil menü butonu -->
+            <button class="navbar-toggle" onclick="document.querySelector('.navbar-links').classList.toggle('active')">
+                ☰
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mesajlar (Django messages framework) -->
+    {% if messages %}
+    <div class="container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+            <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Ana İçerik -->
+    <main class="container main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>🤔 Kararsızım — Kararsız kaldığında topluluğa sor!</p>
+        </div>
+    </footer>
+
+    {% load static %}
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

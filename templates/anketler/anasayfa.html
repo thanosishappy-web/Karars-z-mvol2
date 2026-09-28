@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Kararsızım — Kararsız kaldığında topluluğa sor!{% endblock %}
+
+{% block content %}
+<div class="anasayfa-container">
+    <!-- Hero -->
+    <div class="hero">
+        <h1>🤔 Ne Yapacağına Karar Veremedin mi?</h1>
+        <p>Anket oluştur, topluluğa sor, en iyi kararı birlikte verelim!</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'anketler:olustur' %}" class="btn btn-primary">+ Yeni Anket Oluştur</a>
+        {% else %}
+        <a href="{% url 'hesap:kayit' %}" class="btn btn-primary">Hemen Başla 🚀</a>
+        {% endif %}
+    </div>
+
+    <!-- Anket Listesi -->
+    {% if anketler %}
+    <div class="anket-list">
+        {% for anket in anketler %}
+        <div class="anket-card">
+            <div class="anket-card-header">
+                <span class="anket-kullanici">@{{ anket.olusturan.username }}</span>
+                <span class="anket-tarih">{{ anket.olusturma_tarihi|timesince }} önce</span>
+            </div>
+
+            <h3 class="anket-soru">
+                <a href="{% url 'anketler:detay' anket.pk %}">{{ anket.soru }}</a>
+            </h3>
+
+            <!-- Seçenek önizlemesi -->
+            <div class="anket-secenekler-onizleme">
+                {% for secenek in anket.secenekler.all %}
+                <span class="secenek-chip">{{ secenek.metin }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="anket-card-footer">
+                <span>🗳️ {{ anket.toplam_oy }} oy</span>
+                {% if anket.pk in oylanan_anket_idler %}
+                <span class="badge badge-oylandi">✓ Oy verildi</span>
+                {% endif %}
+                <a href="{% url 'anketler:detay' anket.pk %}" class="btn btn-sm btn-primary">
+                    {% if anket.pk in oylanan_anket_idler %}
+                        Sonuçları Gör
+                    {% else %}
+                        Oy Ver →
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Sayfalama -->
+    {% if anketler.has_other_pages %}
+    <div class="pagination">
+        {% if anketler.has_previous %}
+        <a href="?sayfa={{ anketler.previous_page_number }}" class="btn btn-ghost btn-sm">← Önceki</a>
+        {% endif %}
+
+        <span class="pagination-info">
+            Sayfa {{ anketler.number }} / {{ anketler.paginator.num_pages }}
+        </span>
+
+        {% if anketler.has_next %}
+        <a href="?sayfa={{ anketler.next_page_number }}" class="btn btn-ghost btn-sm">Sonraki →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+        <p>📋 Henüz anket yok. İlk anketi sen oluştur!</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'anketler:olustur' %}" class="btn btn-primary">İlk Anketini Oluştur</a>
+        {% else %}
+        <a href="{% url 'hesap:kayit' %}" class="btn btn-primary">Kayıt Ol ve Başla</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}@{{ user.username }} — Kararsızım{% endblock %}
+
+{% block content %}
+<div class="profil-container">
+    <div class="profil-header">
+        <div class="profil-avatar">{{ user.username|make_list|first|upper }}</div>
+        <div class="profil-info">
+            <h1>@{{ user.username }}</h1>
+            <p class="profil-meta">
+                📅 Katılım: {{ user.date_joined|date:"d F Y" }}
+                · 📊 {{ anketlerim.count }} anket
+            </p>
+        </div>
+    </div>
+
+    <div class="profil-section">
+        <h2>📋 Anketlerim</h2>
+
+        {% if anketlerim %}
+        <div class="anket-list">
+            {% for anket in anketlerim %}
+            <div class="anket-card">
+                <div class="anket-card-header">
+                    <span class="anket-tarih">{{ anket.olusturma_tarihi|timesince }} önce</span>
+                    {% if anket.aktif %}
+                    <span class="badge badge-aktif">Aktif</span>
+                    {% else %}
+                    <span class="badge badge-kapali">Kapalı</span>
+                    {% endif %}
+                </div>
+                <h3 class="anket-soru">
+                    <a href="{% url 'anketler:detay' anket.pk %}">{{ anket.soru }}</a>
+                </h3>
+                <div class="anket-card-footer">
+                    <span>🗳️ {{ anket.toplam_oy }} oy</span>
+                    <span>📝 {{ anket.secenekler.count }} seçenek</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>🤔 Henüz hiç anket oluşturmadın.</p>
+            <a href="{% url 'anketler:olustur' %}" class="btn btn-primary">İlk Anketini Oluştur</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

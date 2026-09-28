@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Giriş Yap — Kararsızım{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>👋 Tekrar Hoş Geldin</h1>
+            <p>Hesabına giriş yap ve oylamaya devam et!</p>
+        </div>
+
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <div class="form-errors">
+                    {% for error in field.errors %}
+                    <small class="form-error">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+            <div class="form-errors">
+                {% for error in form.non_field_errors %}
+                <small class="form-error">{{ error }}</small>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary btn-full">Giriş Yap</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Hesabın yok mu? <a href="{% url 'hesap:kayit' %}">Kayıt Ol</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

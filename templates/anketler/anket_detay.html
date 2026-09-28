@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ anket.soru|truncatechars:60 }} — Kararsızım{% endblock %}
+
+{% block content %}
+<div class="detay-container">
+    <!-- Geri butonu -->
+    <a href="{% url 'anketler:anasayfa' %}" class="btn btn-ghost btn-sm detay-geri">← Geri</a>
+
+    <div class="detay-card">
+        <!-- Anket başlığı -->
+        <div class="detay-header">
+            <span class="anket-kullanici">@{{ anket.olusturan.username }}</span>
+            <span class="anket-tarih">{{ anket.olusturma_tarihi|timesince }} önce</span>
+        </div>
+
+        <h1 class="detay-soru">{{ anket.soru }}</h1>
+
+        <!-- Oylama / Sonuçlar -->
+        <div id="anket-icerik" data-anket-id="{{ anket.pk }}" data-oy-verildi="{{ oy_verildi|yesno:'true,false' }}">
+
+            {% if oy_verildi %}
+            <!-- Sonuçları göster -->
+            <div class="sonuclar">
+                {% for secenek in anket.secenekler.all %}
+                <div class="sonuc-item {% if kullanici_oyu and kullanici_oyu.secenek_id == secenek.pk %}secildi{% endif %}">
+                    <div class="sonuc-bilgi">
+                        <span class="sonuc-metin">
+                            {% if kullanici_oyu and kullanici_oyu.secenek_id == secenek.pk %}✓ {% endif %}
+                            {{ secenek.metin }}
+                        </span>
+                        <span class="sonuc-sayi">{{ secenek.oy_sayisi }} oy · %{{ secenek.oy_yuzdesi }}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ secenek.oy_yuzdesi }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <div class="sonuc-footer">
+                    <span>✅ Oyun kaydedildi!</span>
+                    <span>🗳️ Toplam {{ anket.toplam_oy }} oy</span>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- Oylama formu -->
+            <form id="oylama-form" class="oylama-form">
+                {% csrf_token %}
+                <div class="secenekler">
+                    {% for secenek in anket.secenekler.all %}
+                    <label class="secenek-radio">
+                        <input type="radio" name="secenek_id" value="{{ secenek.pk }}">
+                        <span class="secenek-radio-mark"></span>
+                        <span class="secenek-radio-metin">{{ secenek.metin }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full" id="oyla-btn" disabled>
+                    Oyumu Gönder
+                </button>
+
+                <p class="oylama-bilgi">🗳️ Şu ana kadar {{ anket.toplam_oy }} oy verildi</p>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const anketIcerik = document.getElementById('anket-icerik');
+    if (!anketIcerik) return;
+
+    const anketId = anketIcerik.dataset.anketId;
+    const oyVerildi = anketIcerik.dataset.oyVerildi === 'true';
+
+    if (oyVerildi) return; // Zaten oy verilmişse JS'e gerek yok
+
+    const form = document.getElementById('oylama-form');
+    const oylaBtn = document.getElementById('oyla-btn');
+    const radiolar = document.querySelectorAll('input[name="secenek_id"]');
+
+    // Radyo buton seçildiğinde butonu aktif et
+    radiolar.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            oylaBtn.disabled = false;
+            // Seçilen label'a aktif sınıfı ekle
+            document.querySelectorAll('.secenek-radio').forEach(function(label) {
+                label.classList.remove('active');
+            });
+            this.closest('.secenek-radio').classList.add('active');
+        });
+    });
+
+    // Form submit — AJAX ile oy gönder
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const secilen = document.querySelector('input[name="secenek_id"]:checked');
+        if (!secilen) return;
+
+        oylaBtn.disabled = true;
+        oylaBtn.textContent = 'Gönderiliyor...';
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('/anket/' + anketId + '/oyla/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'secenek_id=' + secilen.value,
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                // Sonuçları göster
+                let html = '<div class="sonuclar">';
+
+                data.sonuclar.forEach(function(s) {
+                    const secildiClass = s.secildi ? ' secildi' : '';
+                    const check = s.secildi ? '✓ ' : '';
+                    html += '<div class="sonuc-item' + secildiClass + '">';
+                    html += '  <div class="sonuc-bilgi">';
+                    html += '    <span class="sonuc-metin">' + check + s.metin + '</span>';
+                    html += '    <span class="sonuc-sayi">' + s.oy_sayisi + ' oy · %' + s.yuzde + '</span>';
+                    html += '  </div>';
+                    html += '  <div class="progress-bar">';
+                    html += '    <div class="progress-fill" style="width: 0%"></div>';
+                    html += '  </div>';
+                    html += '</div>';
+                });
+
+                html += '<div class="sonuc-footer">';
+                html += '  <span>✅ Oyun kaydedildi!</span>';
+                html += '  <span>🗳️ Toplam ' + data.toplam_oy + ' oy</span>';
+                html += '</div>';
+                html += '</div>';
+
+                anketIcerik.innerHTML = html;
+
+                // Progress bar animasyonu
+                setTimeout(function() {
+                    data.sonuclar.forEach(function(s) {
+                        const bars = document.querySelectorAll('.progress-fill');
+                        data.sonuclar.forEach(function(s2, i) {
+                            bars[i].style.width = s2.yuzde + '%';
+                        });
+                    });
+                }, 50);
+            } else {
+                alert(data.error || 'Bir hata oluştu.');
+                oylaBtn.disabled = false;
+                oylaBtn.textContent = 'Oyumu Gönder';
+            }
+        })
+        .catch(function(err) {
+            alert('Bağlantı hatası. Lütfen tekrar dene.');
+            oylaBtn.disabled = false;
+            oylaBtn.textContent = 'Oyumu Gönder';
+        });
+    });
+});
+</script>
+{% endblock %}

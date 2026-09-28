@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Kayıt Ol — Kararsızım{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1>🎉 Aramıza Katıl</h1>
+            <p>Hesap oluştur ve anketlerini paylaşmaya başla!</p>
+        </div>
+
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <small class="form-help">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                <div class="form-errors">
+                    {% for error in field.errors %}
+                    <small class="form-error">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if form.non_field_errors %}
+            <div class="form-errors">
+                {% for error in form.non_field_errors %}
+                <small class="form-error">{{ error }}</small>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <button type="submit" class="btn btn-primary btn-full">Kayıt Ol 🚀</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Zaten hesabın var mı? <a href="{% url 'hesap:giris' %}">Giriş Yap</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
